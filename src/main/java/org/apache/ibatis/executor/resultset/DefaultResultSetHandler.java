@@ -15,19 +15,6 @@
  */
 package org.apache.ibatis.executor.resultset;
 
-import java.lang.reflect.Constructor;
-import java.sql.CallableStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
-
 import org.apache.ibatis.annotations.AutomapConstructor;
 import org.apache.ibatis.binding.MapperMethod.ParamMap;
 import org.apache.ibatis.cache.CacheKey;
@@ -42,25 +29,22 @@ import org.apache.ibatis.executor.parameter.ParameterHandler;
 import org.apache.ibatis.executor.result.DefaultResultContext;
 import org.apache.ibatis.executor.result.DefaultResultHandler;
 import org.apache.ibatis.executor.result.ResultMapException;
-import org.apache.ibatis.mapping.BoundSql;
-import org.apache.ibatis.mapping.Discriminator;
-import org.apache.ibatis.mapping.MappedStatement;
-import org.apache.ibatis.mapping.ParameterMapping;
-import org.apache.ibatis.mapping.ParameterMode;
-import org.apache.ibatis.mapping.ResultMap;
-import org.apache.ibatis.mapping.ResultMapping;
+import org.apache.ibatis.mapping.*;
 import org.apache.ibatis.reflection.MetaClass;
 import org.apache.ibatis.reflection.MetaObject;
 import org.apache.ibatis.reflection.ReflectorFactory;
 import org.apache.ibatis.reflection.factory.ObjectFactory;
-import org.apache.ibatis.session.AutoMappingBehavior;
-import org.apache.ibatis.session.Configuration;
-import org.apache.ibatis.session.ResultContext;
-import org.apache.ibatis.session.ResultHandler;
-import org.apache.ibatis.session.RowBounds;
+import org.apache.ibatis.session.*;
 import org.apache.ibatis.type.JdbcType;
 import org.apache.ibatis.type.TypeHandler;
 import org.apache.ibatis.type.TypeHandlerRegistry;
+
+import java.lang.reflect.Constructor;
+import java.sql.CallableStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.*;
 
 /**
  * @author Clinton Begin
@@ -181,37 +165,58 @@ public class DefaultResultSetHandler implements ResultSetHandler {
   public List<Object> handleResultSets(Statement stmt) throws SQLException {
     ErrorContext.instance().activity("handling results").object(mappedStatement.getId());
 
+    // 最终结果存放，如果为多结果集合则返回 父List内存储多个子List
+    // 负责为单结果集合，则返回父List中仅有的一个List
     final List<Object> multipleResults = new ArrayList<>();
 
     int resultSetCount = 0;
+    // 获取第一个结果集合
     ResultSetWrapper rsw = getFirstResultSet(stmt);
 
+    // 获取改请求语句的多个映射结果ResultMap
     List<ResultMap> resultMaps = mappedStatement.getResultMaps();
     int resultMapCount = resultMaps.size();
+    // 验证结果集不为空并且映射结果集不能为空
     validateResultMapsCount(rsw, resultMapCount);
     while (rsw != null && resultMapCount > resultSetCount) {
       ResultMap resultMap = resultMaps.get(resultSetCount);
+      // 开始处理结果集
       handleResultSet(rsw, resultMap, multipleResults, null);
+      // 获取下一结果集合
       rsw = getNextResultSet(stmt);
+      // 清理嵌套结果集
       cleanUpAfterHandlingResultSet();
+      // 已经处理的结果集个数+1
       resultSetCount++;
     }
 
+    // 获取多结果集字符串 aaa,bbb 逗号分割形式
     String[] resultSets = mappedStatement.getResultSets();
+    // 如果配置多个结果集名称，则按照多结果集进行处理
     if (resultSets != null) {
       while (rsw != null && resultSetCount < resultSets.length) {
+        // 根据结果集名称获取对应的 <result/> 节点映射对象ResultMapping
         ResultMapping parentMapping = nextResultMaps.get(resultSets[resultSetCount]);
         if (parentMapping != null) {
+          // 获取嵌套的resultMapId
           String nestedResultMapId = parentMapping.getNestedResultMapId();
+          // 根据resultMapId获取该<result/>节点关联的resultMap
           ResultMap resultMap = configuration.getResultMap(nestedResultMapId);
+          // 根据该resultMap处理结果集
           handleResultSet(rsw, resultMap, null, parentMapping);
         }
+        // 获取下一结果集合
         rsw = getNextResultSet(stmt);
+        // 清理嵌套结果集
         cleanUpAfterHandlingResultSet();
+        // 已经处理的结果集个数+1
         resultSetCount++;
       }
     }
 
+    // 整理解析后结果，该结果数据结构为一个父List集合内包含多个List集合结构
+    // 如果父List集合中仅包含一个List集合，则返回唯一一个集合
+    // 否则为多结果集，则直接返回父List集合
     return collapseSingleResultList(multipleResults);
   }
 
