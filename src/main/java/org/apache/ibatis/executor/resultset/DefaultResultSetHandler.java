@@ -357,6 +357,7 @@ public class DefaultResultSetHandler implements ResultSetHandler {
     }
   }
 
+  // 处理简单类型的ResultMap（不含嵌套映射)
   private void handleRowValuesForSimpleResultMap(ResultSetWrapper rsw, ResultMap resultMap, ResultHandler<?> resultHandler, RowBounds rowBounds, ResultMapping parentMapping)
       throws SQLException {
     DefaultResultContext<Object> resultContext = new DefaultResultContext<>();
@@ -375,6 +376,9 @@ public class DefaultResultSetHandler implements ResultSetHandler {
     }
   }
 
+  // 处理最终结果
+  // 1. 跳转向父类
+  // 2. 调用ResuleHandler处理最终结果
   private void storeObject(ResultHandler<?> resultHandler, DefaultResultContext<Object> resultContext, Object rowValue, ResultMapping parentMapping, ResultSet rs) throws SQLException {
     if (parentMapping != null) {
       linkToParents(rs, parentMapping, rowValue);
@@ -424,8 +428,11 @@ public class DefaultResultSetHandler implements ResultSetHandler {
       final MetaObject metaObject = configuration.newMetaObject(rowValue);
       boolean foundValues = this.useConstructorMappings;
       if (shouldApplyAutomaticMappings(resultMap, false)) {
+        // 自动映射
         foundValues = applyAutomaticMappings(rsw, resultMap, metaObject, columnPrefix) || foundValues;
       }
+      // 手动映射
+      // 在自动映射处理完毕后，再处理手动映射
       foundValues = applyPropertyMappings(rsw, resultMap, metaObject, lazyLoader, columnPrefix) || foundValues;
       foundValues = lazyLoader.size() > 0 || foundValues;
       rowValue = foundValues || configuration.isReturnInstanceForEmptyRow() ? rowValue : null;
@@ -544,7 +551,7 @@ public class DefaultResultSetHandler implements ResultSetHandler {
     return autoMapping;
   }
 
-  // 开始自动映射无需使用使用ResultMap
+  // 自动映射
   private boolean applyAutomaticMappings(ResultSetWrapper rsw, ResultMap resultMap, MetaObject metaObject, String columnPrefix) throws SQLException {
     List<UnMappedColumnAutoMapping> autoMapping = createAutomaticMappings(rsw, resultMap, metaObject, columnPrefix);
     boolean foundValues = false;
@@ -811,6 +818,7 @@ public class DefaultResultSetHandler implements ResultSetHandler {
   // NESTED QUERY
   //
 
+  // 进行嵌套查询
   private Object getNestedQueryConstructorValue(ResultSet rs, ResultMapping constructorMapping, String columnPrefix) throws SQLException {
     final String nestedQueryId = constructorMapping.getNestedQueryId();
     final MappedStatement nestedQuery = configuration.getMappedStatement(nestedQueryId);
@@ -869,6 +877,7 @@ public class DefaultResultSetHandler implements ResultSetHandler {
   }
 
   // 准备简易方式参数
+  // 提取resultMapping中column的值
   private Object prepareSimpleKeyParameter(ResultSet rs, ResultMapping resultMapping, Class<?> parameterType, String columnPrefix) throws SQLException {
     final TypeHandler<?> typeHandler;
     if (typeHandlerRegistry.hasTypeHandler(parameterType)) {
@@ -880,6 +889,7 @@ public class DefaultResultSetHandler implements ResultSetHandler {
   }
 
   // 准备复杂方式参数
+  // column中存在多列，则将多列存入嵌套查询返回对象类型中（重新创建实体）
   private Object prepareCompositeKeyParameter(ResultSet rs, ResultMapping resultMapping, Class<?> parameterType, String columnPrefix) throws SQLException {
     final Object parameterObject = instantiateParameterObject(parameterType);
     final MetaObject metaObject = configuration.newMetaObject(parameterObject);
