@@ -395,7 +395,8 @@ public class DefaultResultSetHandler implements ResultSetHandler {
 
   // 是否应该处理后续数据
   private boolean shouldProcessMoreRows(ResultContext<?> context, RowBounds rowBounds) {
-    return !context.isStopped() && context.getResultCount() < rowBounds.getLimit();
+    return !context.isStopped() // 上下文对象未被停止使用
+              && context.getResultCount() < rowBounds.getLimit(); // 处理结果行数小于逻辑分页对象中的限定行数
   }
 
   // 跳过结果集指定行数
@@ -970,13 +971,25 @@ public class DefaultResultSetHandler implements ResultSetHandler {
   // HANDLE NESTED RESULT MAPS
   //
 
+  // 处理嵌套结果集
   private void handleRowValuesForNestedResultMap(ResultSetWrapper rsw, ResultMap resultMap, ResultHandler<?> resultHandler, RowBounds rowBounds, ResultMapping parentMapping) throws SQLException {
+    // 结果上下文
     final DefaultResultContext<Object> resultContext = new DefaultResultContext<>();
+    // 获取待处理结果集
     ResultSet resultSet = rsw.getResultSet();
+    // 跳过指定行（可用于逻辑分页）
     skipRows(resultSet, rowBounds);
+    // 记录当前行实体或行值
     Object rowValue = previousRowValue;
-    while (shouldProcessMoreRows(resultContext, rowBounds) && !resultSet.isClosed() && resultSet.next()) {
+    // 是否进行下一行数据处理
+    while (shouldProcessMoreRows(resultContext, rowBounds) // 是否继续处理
+              && !resultSet.isClosed() // 结果集未被关闭
+              && resultSet.next()) { // 可定位到下一结果行
+      // 递归获取ResultMap中的discrimination
+      // 返回值同样为ResultMap，该resultMap为最终需要被处理结构
       final ResultMap discriminatedResultMap = resolveDiscriminatedResultMap(resultSet, resultMap, null);
+      // 为每一行数据创建唯一key
+      // 使用该key可处理嵌套结果行
       final CacheKey rowKey = createRowKey(discriminatedResultMap, rsw, null);
       Object partialObject = nestedResultObjects.get(rowKey);
       // issue #577 && #542
@@ -1125,58 +1138,83 @@ public class DefaultResultSetHandler implements ResultSetHandler {
   // UNIQUE RESULT KEY
   //
 
+  // 创建唯一结果行key
+  // 需要参数：结果集映射结构，包装后的结果集，列前缀
   private CacheKey createRowKey(ResultMap resultMap, ResultSetWrapper rsw, String columnPrefix) throws SQLException {
+    // 创建缓存key对象
     final CacheKey cacheKey = new CacheKey();
+    // 根据resultMap.getId()创建缓存key
     cacheKey.update(resultMap.getId());
+
+    // 处理resultMap中存在id与result节点类型result
     List<ResultMapping> resultMappings = getResultMappingsForRowKey(resultMap);
-    if (resultMappings.isEmpty()) {
+    if (resultMappings.isEmpty()) { // 为空时处理
+      //如果ResultMap返回类型为map相关子类
       if (Map.class.isAssignableFrom(resultMap.getType())) {
+        // 根据结果集中的列名列表进行缓存key创建
         createRowKeyForMap(rsw, cacheKey);
       } else {
+        // 创建未映射字段缓存key
         createRowKeyForUnmappedProperties(resultMap, rsw, cacheKey, columnPrefix);
       }
     } else {
+      // 处理resultMap中存在id与result节点类型result
       createRowKeyForMappedProperties(resultMap, rsw, cacheKey, resultMappings, columnPrefix);
     }
+    // 如果缓存key构造项小于2时返回NullCacheKey
     if (cacheKey.getUpdateCount() < 2) {
       return CacheKey.NULL_CACHE_KEY;
     }
     return cacheKey;
   }
 
+  // 合并缓存key
   private CacheKey combineKeys(CacheKey rowKey, CacheKey parentRowKey) {
+    // 两项cacheKey同时满足缓存key大于1
     if (rowKey.getUpdateCount() > 1 && parentRowKey.getUpdateCount() > 1) {
       CacheKey combinedKey;
       try {
+        // 通过克隆参数0[(CacheKey rowKey,]中缓存key创建新缓存
         combinedKey = rowKey.clone();
       } catch (CloneNotSupportedException e) {
         throw new ExecutorException("Error cloning cache key.  Cause: " + e, e);
       }
+      // 将parentRowKey作为缓存key项目 重新构建缓存key
       combinedKey.update(parentRowKey);
       return combinedKey;
     }
+    // 否则返回 NullCacheKey
     return CacheKey.NULL_CACHE_KEY;
   }
 
+  // 为了创建唯一行key而获取resultMap中的resultMapping
   private List<ResultMapping> getResultMappingsForRowKey(ResultMap resultMap) {
+    // 获取id类型resultmapping
     List<ResultMapping> resultMappings = resultMap.getIdResultMappings();
     if (resultMappings.isEmpty()) {
+      // 如果不存在id类型resultmapping则获取属性类型resultmapping
       resultMappings = resultMap.getPropertyResultMappings();
     }
     return resultMappings;
   }
 
+  // 处理resultMap中存在id与result节点类型result
   private void createRowKeyForMappedProperties(ResultMap resultMap, ResultSetWrapper rsw, CacheKey cacheKey, List<ResultMapping> resultMappings, String columnPrefix) throws SQLException {
     for (ResultMapping resultMapping : resultMappings) {
+      // 存在嵌套结果映射并且非其他结果结果集
       if (resultMapping.getNestedResultMapId() != null && resultMapping.getResultSet() == null) {
         // Issue #392
         final ResultMap nestedResultMap = configuration.getResultMap(resultMapping.getNestedResultMapId());
+        // 递归调用 org.apache.ibatis.executor.resultset.DefaultResultSetHandler.createRowKeyForMappedProperties 构建缓存key
         createRowKeyForMappedProperties(nestedResultMap, rsw, cacheKey, nestedResultMap.getConstructorResultMappings(),
             prependPrefix(resultMapping.getColumnPrefix(), columnPrefix));
-      } else if (resultMapping.getNestedQueryId() == null) {
+      }
+      // 如果不存在嵌套的查询，即resultMapping中select属性为空
+      else if (resultMapping.getNestedQueryId() == null) {
         final String column = prependPrefix(resultMapping.getColumn(), columnPrefix);
         final TypeHandler<?> th = resultMapping.getTypeHandler();
         List<String> mappedColumnNames = rsw.getMappedColumnNames(resultMap, columnPrefix);
+        // 如果列名称不为空并且结果集中包含该列名称
         // Issue #114
         if (column != null && mappedColumnNames.contains(column.toUpperCase(Locale.ENGLISH))) {
           final Object value = th.getResult(rsw.getResultSet(), column);
@@ -1189,19 +1227,27 @@ public class DefaultResultSetHandler implements ResultSetHandler {
     }
   }
 
+  // 根据未映射字段进行缓存key创建
+  // resultMap中无id与result节点类型result
   private void createRowKeyForUnmappedProperties(ResultMap resultMap, ResultSetWrapper rsw, CacheKey cacheKey, String columnPrefix) throws SQLException {
+    // 根据resultMap中Type构造反射类型
     final MetaClass metaType = MetaClass.forClass(resultMap.getType(), reflectorFactory);
+    // 根据resultMap与包装后结果集获取resultMap中未明确映射的字段
+    // 获取ResultSet（结果集）中字段而非mataType中字段
     List<String> unmappedColumnNames = rsw.getUnmappedColumnNames(resultMap, columnPrefix);
     for (String column : unmappedColumnNames) {
       String property = column;
       if (columnPrefix != null && !columnPrefix.isEmpty()) {
         // When columnPrefix is specified, ignore columns without the prefix.
+        // 指定columnPrefix时，忽略不带前缀的列。
         if (column.toUpperCase(Locale.ENGLISH).startsWith(columnPrefix)) {
           property = column.substring(columnPrefix.length());
         } else {
           continue;
         }
       }
+      //  根据自动驼峰命名规则（camel case）映射，即从经典数据库列名 A_COLUMN 到经典 Java 属性名 aColumn 的类似映射。
+      // 如果的存在则根据列名与列值进行构建
       if (metaType.findProperty(property, configuration.isMapUnderscoreToCamelCase()) != null) {
         String value = rsw.getResultSet().getString(column);
         if (value != null) {
@@ -1212,6 +1258,7 @@ public class DefaultResultSetHandler implements ResultSetHandler {
     }
   }
 
+  // 根据结果集中的列名列表进行缓存key创建
   private void createRowKeyForMap(ResultSetWrapper rsw, CacheKey cacheKey) throws SQLException {
     List<String> columnNames = rsw.getColumnNames();
     for (String columnName : columnNames) {
