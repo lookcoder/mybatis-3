@@ -358,6 +358,20 @@ public class XMLMapperBuilder extends BaseBuilder {
   }
 
   // 从上下文环境构造RequestMapping
+  // name
+  // property
+  // column
+  // javaType
+  // jdbcType
+  // select
+  // resultMap
+  // notNullColumn
+  // columnPrefix
+  // typeHandler
+  // resultSet
+  // foreignColumn
+  // fetchType
+  // 以上属性基本囊括构建resultMapping所需的元素
   private ResultMapping buildResultMappingFromContext(XNode context, Class<?> resultType, List<ResultFlag> flags) throws Exception {
     String property;
     // 如果为<constructor>节点内元素
