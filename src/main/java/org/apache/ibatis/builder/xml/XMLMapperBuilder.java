@@ -302,6 +302,10 @@ public class XMLMapperBuilder extends BaseBuilder {
     }
   }
 
+  // 构造discriminatior节点
+  // ResultMapping resultMapping;
+  // Map<String, String> discriminatorMap;
+  // 使用以上两属性
   private Discriminator processDiscriminatorElement(XNode context, Class<?> resultType, List<ResultMapping> resultMappings) throws Exception {
     String column = context.getStringAttribute("column");
     String javaType = context.getStringAttribute("javaType");
@@ -438,10 +442,16 @@ public class XMLMapperBuilder extends BaseBuilder {
                 nestedResultMap, notNullColumn, columnPrefix, typeHandlerClass, flags, resultSet, foreignColumn, lazy);
   }
 
+  // 处理嵌套resultMapping节点
   private String processNestedResultMappings(XNode context, List<ResultMapping> resultMappings, Class<?> enclosingType) throws Exception {
+    // 如果该节点所属为association collection case三节点中任一个
+    // 则递归调用
+    // org.apache.ibatis.builder.xml.XMLMapperBuilder.resultMapElement(org.apache.ibatis.parsing.XNode
+    //                                                                , java.util.List<org.apache.ibatis.mapping.ResultMapping>
+    //                                                                , java.lang.Class<?>)
     if ("association".equals(context.getName())
-        || "collection".equals(context.getName())
-        || "case".equals(context.getName())) {
+      || "collection".equals(context.getName())
+      || "case".equals(context.getName())) {
       if (context.getStringAttribute("select") == null) {
         validateCollection(context, enclosingType);
         ResultMap resultMap = resultMapElement(context, resultMappings, enclosingType);
