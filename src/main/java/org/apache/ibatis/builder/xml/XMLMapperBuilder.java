@@ -251,13 +251,19 @@ public class XMLMapperBuilder extends BaseBuilder {
     resultMappings.addAll(additionalResultMappings);
     List<XNode> resultChildren = resultMapNode.getChildren();
     for (XNode resultChild : resultChildren) {
+      // 处理 <constructor>
       if ("constructor".equals(resultChild.getName())) {
         processConstructorElement(resultChild, typeClass, resultMappings);
-      } else if ("discriminator".equals(resultChild.getName())) {
+      }
+      // 处理 <discriminator>
+      else if ("discriminator".equals(resultChild.getName())) {
         discriminator = processDiscriminatorElement(resultChild, typeClass, resultMappings);
-      } else {
+      }
+      // 处理 <id> ,<result> ,<association> ,<collection>
+      else {
         List<ResultFlag> flags = new ArrayList<>();
         if ("id".equals(resultChild.getName())) {
+          // 如果为id标签则添加ID标志
           flags.add(ResultFlag.ID);
         }
         resultMappings.add(buildResultMappingFromContext(resultChild, typeClass, flags));
@@ -323,6 +329,7 @@ public class XMLMapperBuilder extends BaseBuilder {
     return builderAssistant.buildDiscriminator(resultType, column, javaTypeClass, jdbcTypeEnum, typeHandlerClass, discriminatorMap);
   }
 
+  // 解析sql元素集合
   private void sqlElement(List<XNode> list) {
     if (configuration.getDatabaseId() != null) {
       sqlElement(list, configuration.getDatabaseId());
@@ -341,16 +348,20 @@ public class XMLMapperBuilder extends BaseBuilder {
     }
   }
 
+  // requiredDatabaseId 通过 configuration.getDatabaseId() != null 断定
   private boolean databaseIdMatchesCurrent(String id, String databaseId, String requiredDatabaseId) {
     if (requiredDatabaseId != null) {
       if (!requiredDatabaseId.equals(databaseId)) {
         return false;
       }
     } else {
+      // 如果configuration.getDatabaseId() == null，但是sql节点中配置了databaseId（databaseId != null），则不匹配
       if (databaseId != null) {
         return false;
       }
       // skip this fragment if there is a previous one with a not null databaseId
+      // 如果前一个片段具有非null databaseId，则跳过此片段
+      // （判断是否存在相同的sql片段）
       if (this.sqlFragments.containsKey(id)) {
         XNode context = this.sqlFragments.get(id);
         if (context.getStringAttribute("databaseId") != null) {
