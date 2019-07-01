@@ -27,6 +27,10 @@ public class Blog {
   public Blog() {
   }
 
+  public Blog(Integer id) {
+    this.id = id;
+  }
+
   public Blog(int id, String title, Author author, List<Post> posts) {
     this();
     this.id = id;
