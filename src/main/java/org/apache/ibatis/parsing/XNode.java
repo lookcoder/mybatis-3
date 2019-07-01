@@ -75,7 +75,7 @@ public class XNode {
   // 如果以上属性中存在"."则替换为"_"
   // 添加上节点名称 current.getName()
   // 如果存在父类节点，则递归父类节点，生成规则同上
-  // 最终效果如下：resultMap[detailedBlogResultMap]_association[author]
+  // 最终效果如下：mapper_resultMap[detailedBlogResultMap]_association[author]
   public String getValueBasedIdentifier() {
     StringBuilder builder = new StringBuilder();
     XNode current = this;
