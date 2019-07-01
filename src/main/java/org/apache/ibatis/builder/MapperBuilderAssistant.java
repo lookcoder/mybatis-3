@@ -153,6 +153,7 @@ public class MapperBuilderAssistant extends BaseBuilder {
         .build();
   }
 
+  // 向全局配置中添加ResultMap ::: configuration.addResultMap(resultMap)
   public ResultMap addResultMap(
       String id,
       Class<?> type,
@@ -163,6 +164,7 @@ public class MapperBuilderAssistant extends BaseBuilder {
     id = applyCurrentNamespace(id, false);
     extend = applyCurrentNamespace(extend, true);
 
+    // 如果存在继承关系
     if (extend != null) {
       if (!configuration.hasResultMap(extend)) {
         throw new IncompleteElementException("Could not find a parent resultmap with id '" + extend + "'");
