@@ -236,6 +236,8 @@ public class XMLMapperBuilder extends BaseBuilder {
     return resultMapElement(resultMapNode, Collections.emptyList(), null);
   }
 
+  // 解析ResultMap
+  // 一个ResultMap最终仅存在两种结构 Discriminator discriminator, List<ResultMapping> resultMappings
   private ResultMap resultMapElement(XNode resultMapNode, List<ResultMapping> additionalResultMappings, Class<?> enclosingType) throws Exception {
     ErrorContext.instance().activity("processing " + resultMapNode.getValueBasedIdentifier());
     String type = resultMapNode.getStringAttribute("type",
@@ -244,6 +246,8 @@ public class XMLMapperBuilder extends BaseBuilder {
                 resultMapNode.getStringAttribute("javaType"))));
     Class<?> typeClass = resolveClass(type);
     if (typeClass == null) {
+      // 如果当前节点不存在解析类型，则继承使用父类解析类型
+      // association case 仅包括以上两种解析
       typeClass = inheritEnclosingType(resultMapNode, enclosingType);
     }
     Discriminator discriminator = null;
