@@ -15,38 +15,21 @@
  */
 package org.apache.ibatis.builder.xml;
 
-import java.io.InputStream;
-import java.io.Reader;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-
-import org.apache.ibatis.builder.BaseBuilder;
-import org.apache.ibatis.builder.BuilderException;
-import org.apache.ibatis.builder.CacheRefResolver;
-import org.apache.ibatis.builder.IncompleteElementException;
-import org.apache.ibatis.builder.MapperBuilderAssistant;
-import org.apache.ibatis.builder.ResultMapResolver;
+import org.apache.ibatis.builder.*;
 import org.apache.ibatis.cache.Cache;
 import org.apache.ibatis.executor.ErrorContext;
 import org.apache.ibatis.io.Resources;
-import org.apache.ibatis.mapping.Discriminator;
-import org.apache.ibatis.mapping.ParameterMapping;
-import org.apache.ibatis.mapping.ParameterMode;
-import org.apache.ibatis.mapping.ResultFlag;
-import org.apache.ibatis.mapping.ResultMap;
-import org.apache.ibatis.mapping.ResultMapping;
+import org.apache.ibatis.mapping.*;
 import org.apache.ibatis.parsing.XNode;
 import org.apache.ibatis.parsing.XPathParser;
 import org.apache.ibatis.reflection.MetaClass;
 import org.apache.ibatis.session.Configuration;
 import org.apache.ibatis.type.JdbcType;
 import org.apache.ibatis.type.TypeHandler;
+
+import java.io.InputStream;
+import java.io.Reader;
+import java.util.*;
 
 /**
  * @author Clinton Begin
@@ -306,6 +289,7 @@ public class XMLMapperBuilder extends BaseBuilder {
     return null;
   }
 
+  // 结构构造函数节点 <constructor>
   private void processConstructorElement(XNode resultChild, Class<?> resultType, List<ResultMapping> resultMappings) throws Exception {
     List<XNode> argChildren = resultChild.getChildren();
     for (XNode argChild : argChildren) {
@@ -373,29 +357,53 @@ public class XMLMapperBuilder extends BaseBuilder {
     return true;
   }
 
+  // 从上下文环境构造RequestMapping
   private ResultMapping buildResultMappingFromContext(XNode context, Class<?> resultType, List<ResultFlag> flags) throws Exception {
     String property;
+    // 如果为<constructor>节点内元素
+    // 则取name为属性名称
     if (flags.contains(ResultFlag.CONSTRUCTOR)) {
       property = context.getStringAttribute("name");
-    } else {
+    }
+    // 否则取property
+    else {
       property = context.getStringAttribute("property");
     }
+    // 数据库列明
     String column = context.getStringAttribute("column");
+    // javaBean中属性类型
     String javaType = context.getStringAttribute("javaType");
+    // 数据库列类型
     String jdbcType = context.getStringAttribute("jdbcType");
+    // 如果存在select属性，则标识使用嵌套查询方式获取数据，存在N+1问题
     String nestedSelect = context.getStringAttribute("select");
+    // 如果存在resultMap属性，且该属性为字符串，则代表使用该节点外的resultMap
+    // 否则解析嵌套在该节点内容映射关系
+    // 如果不存在嵌套关系则返回null
     String nestedResultMap = context.getStringAttribute("resultMap",
         processNestedResultMappings(context, Collections.emptyList(), resultType));
+    // 非空列，如果该配置项中配置的字段，再数据库查询出结果时为空，则抛出异常
     String notNullColumn = context.getStringAttribute("notNullColumn");
+    // 为javaBean中属性添加额外前缀
     String columnPrefix = context.getStringAttribute("columnPrefix");
+    // 应该使用的类型处理器，默认不需要配置，会根据javaBean中属性类型进行字段配置
     String typeHandler = context.getStringAttribute("typeHandler");
+    // 如果存在多结果集，该选项为多结果集配置名称：resultSet="blogs,authors"
+    // 删除则代表数据库连接查询返回两个结果集根据先后顺序配置名称
     String resultSet = context.getStringAttribute("resultSet");
+    // 指定外键对应的列名，指定的列将与父类型中 column 给出的列进行匹配
     String foreignColumn = context.getStringAttribute("foreignColumn");
+    // fetchType字段判断该字段是否进行延时加载
+    // 如果fetchType为空则使用configuration.isLazyLoadingEnabled()全局配置判断是否延时加载
     boolean lazy = "lazy".equals(context.getStringAttribute("fetchType", configuration.isLazyLoadingEnabled() ? "lazy" : "eager"));
+
+    // 解析出以下相关类型
     Class<?> javaTypeClass = resolveClass(javaType);
     Class<? extends TypeHandler<?>> typeHandlerClass = resolveClass(typeHandler);
     JdbcType jdbcTypeEnum = resolveJdbcType(jdbcType);
-    return builderAssistant.buildResultMapping(resultType, property, column, javaTypeClass, jdbcTypeEnum, nestedSelect, nestedResultMap, notNullColumn, columnPrefix, typeHandlerClass, flags, resultSet, foreignColumn, lazy);
+
+    return builderAssistant.buildResultMapping(resultType, property, column, javaTypeClass, jdbcTypeEnum, nestedSelect,
+                nestedResultMap, notNullColumn, columnPrefix, typeHandlerClass, flags, resultSet, foreignColumn, lazy);
   }
 
   private String processNestedResultMappings(XNode context, List<ResultMapping> resultMappings, Class<?> enclosingType) throws Exception {
