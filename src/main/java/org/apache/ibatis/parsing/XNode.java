@@ -15,16 +15,13 @@
  */
 package org.apache.ibatis.parsing;
 
+import org.w3c.dom.CharacterData;
+import org.w3c.dom.*;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-
-import org.w3c.dom.CharacterData;
-import org.w3c.dom.Element;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 
 /**
  * @author Clinton Begin
@@ -73,6 +70,12 @@ public class XNode {
     return builder.toString();
   }
 
+  // 如果ResultMap中无id，则使用默认方式生成
+  // id value property 根据以上三种属性任意一种，构造名称
+  // 如果以上属性中存在"."则替换为"_"
+  // 添加上节点名称 current.getName()
+  // 如果存在父类节点，则递归父类节点，生成规则同上
+  // 最终效果如下：resultMap[detailedBlogResultMap]_association[author]
   public String getValueBasedIdentifier() {
     StringBuilder builder = new StringBuilder();
     XNode current = this;
