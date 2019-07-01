@@ -363,8 +363,8 @@ public class XMLMapperBuilder extends BaseBuilder {
   // column
   // javaType
   // jdbcType
-  // select
-  // resultMap
+  // select nestedQueryId
+  // resultMap nestedResultMapId
   // notNullColumn
   // columnPrefix
   // typeHandler
@@ -372,6 +372,24 @@ public class XMLMapperBuilder extends BaseBuilder {
   // foreignColumn
   // fetchType
   // 以上属性基本囊括构建resultMapping所需的元素
+
+  // ResultMapping类中属性：
+  // configuration
+  // property
+  // column
+  // javaType
+  // jdbcType
+  // typeHandler
+  // nestedResultMapId
+  // nestedQueryId
+  // notNullColumns
+  // columnPrefix
+  // flags
+  // composites
+  // resultSet
+  // foreignColumn
+  // lazy
+  // 以上属性为构建resultMapping所需全部属性，可部分赋值
   private ResultMapping buildResultMappingFromContext(XNode context, Class<?> resultType, List<ResultFlag> flags) throws Exception {
     String property;
     // 如果为<constructor>节点内元素
