@@ -15,11 +15,6 @@
  */
 package org.apache.ibatis.builder.xml;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Properties;
-
 import org.apache.ibatis.builder.BuilderException;
 import org.apache.ibatis.builder.IncompleteElementException;
 import org.apache.ibatis.builder.MapperBuilderAssistant;
@@ -29,6 +24,11 @@ import org.apache.ibatis.session.Configuration;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Properties;
 
 /**
  * @author Frank D. Martinez [mnesarco]
@@ -46,12 +46,15 @@ public class XMLIncludeTransformer {
   public void applyIncludes(Node source) {
     Properties variablesContext = new Properties();
     Properties configurationVariables = configuration.getVariables();
+    // 如果configurationVariables存在值，则放入variablesContext
     Optional.ofNullable(configurationVariables).ifPresent(variablesContext::putAll);
+    // 开始的解析includ标记，该操作为递归操作
     applyIncludes(source, variablesContext, false);
   }
 
   /**
    * Recursively apply includes through all SQL fragments.
+   * 递归查询解析所关联的SQL fragments.
    * @param source Include node in DOM tree
    * @param variablesContext Current context for static variables with values
    */

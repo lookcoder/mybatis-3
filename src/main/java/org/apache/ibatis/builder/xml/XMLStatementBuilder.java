@@ -15,23 +15,19 @@
  */
 package org.apache.ibatis.builder.xml;
 
-import java.util.List;
-import java.util.Locale;
-
 import org.apache.ibatis.builder.BaseBuilder;
 import org.apache.ibatis.builder.MapperBuilderAssistant;
 import org.apache.ibatis.executor.keygen.Jdbc3KeyGenerator;
 import org.apache.ibatis.executor.keygen.KeyGenerator;
 import org.apache.ibatis.executor.keygen.NoKeyGenerator;
 import org.apache.ibatis.executor.keygen.SelectKeyGenerator;
-import org.apache.ibatis.mapping.MappedStatement;
-import org.apache.ibatis.mapping.ResultSetType;
-import org.apache.ibatis.mapping.SqlCommandType;
-import org.apache.ibatis.mapping.SqlSource;
-import org.apache.ibatis.mapping.StatementType;
+import org.apache.ibatis.mapping.*;
 import org.apache.ibatis.parsing.XNode;
 import org.apache.ibatis.scripting.LanguageDriver;
 import org.apache.ibatis.session.Configuration;
+
+import java.util.List;
+import java.util.Locale;
 
 /**
  * @author Clinton Begin
@@ -69,19 +65,29 @@ public class XMLStatementBuilder extends BaseBuilder {
     boolean resultOrdered = context.getBooleanAttribute("resultOrdered", false);
 
     // Include Fragments before parsing
+    // 解析include所需的<sql>片段
     XMLIncludeTransformer includeParser = new XMLIncludeTransformer(configuration, builderAssistant);
     includeParser.applyIncludes(context.getNode());
 
+    // 解析参数类型
     String parameterType = context.getStringAttribute("parameterType");
     Class<?> parameterTypeClass = resolveClass(parameterType);
 
+    // 语言驱动
+    // 使用xml方式进行解析动态sql，或者是其他语言驱动
+    // 如：org.apache.ibatis.scripting.xmltags.XMLLanguageDriver， org.apache.ibatis.submitted.language.VelocityLanguageDriver
+    // 默认语言驱动：org.apache.ibatis.scripting.xmltags.XMLLanguageDriver
     String lang = context.getStringAttribute("lang");
     LanguageDriver langDriver = getLanguageDriver(lang);
 
     // Parse selectKey after includes and remove them.
+    // 再解析过include标签并且删除includes标签之后，解析selectKey标签
+    // 主要用于 insert update语句中
+    // 用于在该节点提前或者之后执行sql
     processSelectKeyNodes(id, parameterTypeClass, langDriver);
 
     // Parse the SQL (pre: <selectKey> and <include> were parsed and removed)
+    // 开始解析sql语句，前提是selectKey和include节点已经被解析并且被移除
     KeyGenerator keyGenerator;
     String keyStatementId = id + SelectKeyGenerator.SELECT_KEY_SUFFIX;
     keyStatementId = builderAssistant.applyCurrentNamespace(keyStatementId, true);
@@ -93,18 +99,31 @@ public class XMLStatementBuilder extends BaseBuilder {
           ? Jdbc3KeyGenerator.INSTANCE : NoKeyGenerator.INSTANCE;
     }
 
+    // 根据指定语言驱动创建Sql
     SqlSource sqlSource = langDriver.createSqlSource(configuration, context, parameterTypeClass);
+    // 语句类型，默认类型 STATEMENT, PREPARED, CALLABLE
     StatementType statementType = StatementType.valueOf(context.getStringAttribute("statementType", StatementType.PREPARED.toString()));
+    // 限定查询条数
     Integer fetchSize = context.getIntAttribute("fetchSize");
+    // 限定超时时间
     Integer timeout = context.getIntAttribute("timeout");
+    // 已经被废弃
     String parameterMap = context.getStringAttribute("parameterMap");
+    // 返回结果类型
     String resultType = context.getStringAttribute("resultType");
     Class<?> resultTypeClass = resolveClass(resultType);
+    // 返回映射引用（自定义映射规则）
     String resultMap = context.getStringAttribute("resultMap");
+    // 结果集类型, DEFAULT, FORWARD_ONLY, SCROLL_INSENSITIVE, SCROLL_SENSITIVE
     String resultSetType = context.getStringAttribute("resultSetType");
     ResultSetType resultSetTypeEnum = resolveResultSetType(resultSetType);
+    //（仅对 insert 和 update 有用）唯一标记一个属性，MyBatis 会通过 getGeneratedKeys 的返回值或者通过 insert 语句的 selectKey 子元素设置它的键值，
+    // 默认值：未设置（unset）。如果希望得到多个生成的列，也可以是逗号分隔的属性名称列表。
     String keyProperty = context.getStringAttribute("keyProperty");
+    //     keyColumn 	（仅对 insert 和 update 有用）通过生成的键值设置表中的列名，这个设置仅在某些数据库（像 PostgreSQL）是必须的，
+    //     当主键列不是表中的第一列的时候需要设置。如果希望使用多个生成的列，也可以设置为逗号分隔的属性名称列表。
     String keyColumn = context.getStringAttribute("keyColumn");
+    // 为返回结果集定义名称，多个名称使用逗号分割（resultSet="xxx,xxx,xxx"）
     String resultSets = context.getStringAttribute("resultSets");
 
     builderAssistant.addMappedStatement(id, sqlSource, statementType, sqlCommandType,
@@ -177,10 +196,14 @@ public class XMLStatementBuilder extends BaseBuilder {
         return false;
       }
     } else {
+      // 如果全局没有配置数据库厂商标识
+      // 则如果statement片段配置标识则跳过
       if (databaseId != null) {
         return false;
       }
       // skip this statement if there is a previous one with a not null databaseId
+      // 如果前一个片段具有非null databaseId，则跳过此片段
+      // （判断是否存在相同的sql片段）
       id = builderAssistant.applyCurrentNamespace(id, false);
       if (this.configuration.hasStatement(id, false)) {
         MappedStatement previous = this.configuration.getMappedStatement(id, false); // issue #2
