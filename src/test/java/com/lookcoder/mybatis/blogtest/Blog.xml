@@ -32,10 +32,8 @@
       </discriminator>
     </collection>
   </resultMap>
-
-  <select id="selectBlogDetails" resultMap="detailedBlogResultMap">
-  select
-       B.id as blog_id,
+  <sql id="baseColums">
+        B.id as blog_id,
        B.title as blog_title,
        B.author_id as blog_author_id,
        A.id as author_id,
@@ -58,12 +56,26 @@
        C.comment as comment_text,
        T.id as tag_id,
        T.name as tag_name
-  from Blog B
-       left outer join Author A on B.author_id = A.id
-       left outer join Post P on B.id = P.blog_id
-       left outer join Comment C on P.id = C.post_id
-       left outer join Post_Tag PT on PT.post_id = P.id
-       left outer join Tag T on PT.tag_id = T.id
-  where B.id = #{id}
-</select>
+  </sql>
+
+  <sql id="tableToken">
+    Blog ${tableAlias}
+  </sql>
+
+  <select id="selectBlogDetails" resultMap="detailedBlogResultMap">
+    select
+    <include refid="baseColums">
+      <property name="key1" value="val1?"/>
+    </include>
+    from
+    <include refid="tableToken">
+      <property name="tableAlias" value="B"/>
+    </include>
+    left outer join Author A on B.author_id = A.id
+    left outer join Post P on B.id = P.blog_id
+    left outer join Comment C on P.id = C.post_id
+    left outer join Post_Tag PT on PT.post_id = P.id
+    left outer join Tag T on PT.tag_id = T.id
+    where B.id = #{id}
+  </select>
 </mapper>
