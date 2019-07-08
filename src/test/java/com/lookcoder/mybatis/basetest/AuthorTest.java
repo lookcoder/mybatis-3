@@ -30,7 +30,9 @@ public class AuthorTest {
       final AuthorMapper mapper = sqlSession.getMapper(AuthorMapper.class);
 
       System.out.println("==============================================");
-      final List<Author> authors = mapper.selectByExample(new AuthorExample());
+      final AuthorExample authorExample = new AuthorExample();
+      authorExample.createCriteria().andUsernameEqualTo("author1");
+      final List<Author> authors = mapper.selectByExample(authorExample);
       authors.forEach(System.out::println);
       System.out.println("==============================================");
     } catch (Exception ex) {

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD config 3.0//EN" "http://mybatis.org/dtd/mybatis-3-config.dtd">
 <configuration>
-  <properties resource="com/lookcoder/mybatis/basetest/h2/author-h2.properties"/>
+  <properties resource="com/lookcoder/mybatis/blogtest/blog.properties"/>
     <settings>
         <setting name="logImpl" value="SLF4J"/>
     </settings>
@@ -17,6 +17,6 @@
         </environment>
     </environments>
     <mappers>
-        <mapper resource="com/lookcoder/mybatis/basetest/AuthorMapper.xml"/>
+        <mapper resource="com/lookcoder/mybatis/blogtest/Blog.xml"/>
     </mappers>
 </configuration>

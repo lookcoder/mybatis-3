@@ -14,7 +14,7 @@ public class BlogTest {
 
   @Test
   public void t() {
-    InputStream config = AuthorTest.class.getClassLoader().getResourceAsStream("com/lookcoder/mybatis/basetest/mybatis-config.xml");
+    InputStream config = AuthorTest.class.getClassLoader().getResourceAsStream("com/lookcoder/mybatis/blogtest/mybatis-config.xml");
     SqlSessionFactoryBuilder sqlSessionFactoryBuilder = new SqlSessionFactoryBuilder();
     SqlSessionFactory sqlSessionFactory = sqlSessionFactoryBuilder.build(config);
     try (SqlSession sqlSession = sqlSessionFactory.openSession()) {
