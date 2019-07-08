@@ -40,6 +40,7 @@ public class ParameterExpression extends HashMap<String, String> {
   }
 
   private void parse(String expression) {
+    // 跳过空格
     int p = skipWS(expression, 0);
     if (expression.charAt(p) == '(') {
       expression(expression, p + 1);
@@ -71,6 +72,8 @@ public class ParameterExpression extends HashMap<String, String> {
     }
   }
 
+  // 从指定p（起始索引）开始，跳过空格
+  // 如果内容为全空格，则直接返回长度
   private int skipWS(String expression, int p) {
     for (int i = p; i < expression.length(); i++) {
       if (expression.charAt(i) > 0x20) {
@@ -80,6 +83,7 @@ public class ParameterExpression extends HashMap<String, String> {
     return expression.length();
   }
 
+  //  从指定p（起始索引）开始，循环字符直到遇到给定结束字符（endChars）
   private int skipUntil(String expression, int p, final String endChars) {
     for (int i = p; i < expression.length(); i++) {
       char c = expression.charAt(i);
@@ -127,6 +131,7 @@ public class ParameterExpression extends HashMap<String, String> {
     }
   }
 
+  // 去除左右空格
   private String trimmedStr(String str, int start, int end) {
     while (str.charAt(start) <= 0x20) {
       start++;
