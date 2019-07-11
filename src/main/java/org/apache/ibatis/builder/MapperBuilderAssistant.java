@@ -171,6 +171,7 @@ public class MapperBuilderAssistant extends BaseBuilder {
       }
       ResultMap resultMap = configuration.getResultMap(extend);
       List<ResultMapping> extendedResultMappings = new ArrayList<>(resultMap.getResultMappings());
+      // 删除父resultMap中已经在子ResultMap中存在的resultMapping
       extendedResultMappings.removeAll(resultMappings);
       // Remove parent constructor if this resultMap declares a constructor.
       boolean declaresConstructor = false;
@@ -181,6 +182,7 @@ public class MapperBuilderAssistant extends BaseBuilder {
         }
       }
       if (declaresConstructor) {
+        // 如果子resultMap存在构造函数，则删除父类构造函数
         extendedResultMappings.removeIf(resultMapping -> resultMapping.getFlags().contains(ResultFlag.CONSTRUCTOR));
       }
       resultMappings.addAll(extendedResultMappings);

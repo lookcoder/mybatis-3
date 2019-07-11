@@ -254,6 +254,8 @@ public class XMLMapperBuilder extends BaseBuilder {
     List<ResultMapping> resultMappings = new ArrayList<>();
     resultMappings.addAll(additionalResultMappings);
     List<XNode> resultChildren = resultMapNode.getChildren();
+
+    // 解析ResultMap中的ResultMapping start
     for (XNode resultChild : resultChildren) {
       // 处理 <constructor>
       if ("constructor".equals(resultChild.getName())) {
@@ -273,6 +275,8 @@ public class XMLMapperBuilder extends BaseBuilder {
         resultMappings.add(buildResultMappingFromContext(resultChild, typeClass, flags));
       }
     }
+    // 解析结束 end
+
     String id = resultMapNode.getStringAttribute("id",
             resultMapNode.getValueBasedIdentifier());
     String extend = resultMapNode.getStringAttribute("extends");
@@ -428,11 +432,22 @@ public class XMLMapperBuilder extends BaseBuilder {
     String jdbcType = context.getStringAttribute("jdbcType");
     // 如果存在select属性，则标识使用嵌套查询方式获取数据，存在N+1问题
     String nestedSelect = context.getStringAttribute("select");
+
     // 如果存在resultMap属性，且该属性为字符串，则代表使用该节点外的resultMap
     // 否则解析嵌套在该节点内容映射关系
     // 如果不存在嵌套关系则返回null
+    //
+    // XNode（content）节点，以下关系为 并且&& 关系
+    // 1.不存在resultMap属性
+    // 2."association".equals(context.getName())
+    //   || "collection".equals(context.getName())
+    //   || "case".equals(context.getName())) 是节点中的某一个
+    // 3.context.getStringAttribute("select") == null
+    // 4.如果该节点为collection类型，则该节点要存在属性resultMap或属性javaType或在该映射结果类型中存在可setter的property
+    // 只有以上条件全部成立（1，2，3必须成立，4为可选项，区别为该节点是否为collection）才需要解析嵌套ResultMap
     String nestedResultMap = context.getStringAttribute("resultMap",
         processNestedResultMappings(context, Collections.emptyList(), resultType));
+
     // 非空列，如果该配置项中配置的字段，再数据库查询出结果时为空，则抛出异常
     String notNullColumn = context.getStringAttribute("notNullColumn");
     // 为javaBean中属性添加额外前缀

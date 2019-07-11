@@ -17,6 +17,7 @@
         </environment>
     </environments>
     <mappers>
-        <mapper resource="com/lookcoder/mybatis/basetest/AuthorMapper.xml"/>
+        <!--<mapper resource="com/lookcoder/mybatis/basetest/AuthorMapper.xml"/>-->
+        <mapper class="com.lookcoder.mybatis.basetest.AuthorMapper" />
     </mappers>
 </configuration>
