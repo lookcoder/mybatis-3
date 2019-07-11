@@ -15,11 +15,7 @@
  */
 package org.apache.ibatis.annotations;
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.lang.annotation.*;
 
 /**
  * @author Clinton Begin
@@ -33,8 +29,21 @@ public @interface SelectProvider {
    * Specify a type that implements an SQL provider method.
    *
    * @return a type that implements an SQL provider method
+   * @since 3.5.2
+   * @see #type()
    */
-  Class<?> type();
+  Class<?> value() default void.class;
+
+  /**
+   * Specify a type that implements an SQL provider method.
+   * <p>
+   * This attribute is alias of {@link #value()}.
+   * </p>
+   *
+   * @return a type that implements an SQL provider method
+   * @see #value()
+   */
+  Class<?> type() default void.class;
 
   /**
    * Specify a method for providing an SQL.

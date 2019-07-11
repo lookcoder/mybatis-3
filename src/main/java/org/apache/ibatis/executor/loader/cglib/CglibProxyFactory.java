@@ -1,5 +1,5 @@
 /**
- *    Copyright 2009-2018 the original author or authors.
+ *    Copyright 2009-2019 the original author or authors.
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -15,22 +15,11 @@
  */
 package org.apache.ibatis.executor.loader.cglib;
 
-import java.lang.reflect.Method;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-
 import net.sf.cglib.proxy.Callback;
 import net.sf.cglib.proxy.Enhancer;
 import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
-
-import org.apache.ibatis.executor.loader.AbstractEnhancedDeserializationProxy;
-import org.apache.ibatis.executor.loader.AbstractSerialStateHolder;
-import org.apache.ibatis.executor.loader.ProxyFactory;
-import org.apache.ibatis.executor.loader.ResultLoaderMap;
-import org.apache.ibatis.executor.loader.WriteReplaceInterface;
+import org.apache.ibatis.executor.loader.*;
 import org.apache.ibatis.io.Resources;
 import org.apache.ibatis.logging.Log;
 import org.apache.ibatis.logging.LogFactory;
@@ -39,6 +28,11 @@ import org.apache.ibatis.reflection.factory.ObjectFactory;
 import org.apache.ibatis.reflection.property.PropertyCopier;
 import org.apache.ibatis.reflection.property.PropertyNamer;
 import org.apache.ibatis.session.Configuration;
+
+import java.lang.reflect.Method;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * @author Clinton Begin
@@ -63,11 +57,6 @@ public class CglibProxyFactory implements ProxyFactory {
 
   public Object createDeserializationProxy(Object target, Map<String, ResultLoaderMap.LoadPair> unloadedProperties, ObjectFactory objectFactory, List<Class<?>> constructorArgTypes, List<Object> constructorArgs) {
     return EnhancedDeserializationProxyImpl.createProxy(target, unloadedProperties, objectFactory, constructorArgTypes, constructorArgs);
-  }
-
-  @Override
-  public void setProperties(Properties properties) {
-      // Not Implemented
   }
 
   static Object crateProxy(Class<?> type, Callback callback, List<Class<?>> constructorArgTypes, List<Object> constructorArgs) {

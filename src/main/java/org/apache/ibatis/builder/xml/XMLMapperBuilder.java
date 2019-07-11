@@ -359,25 +359,20 @@ public class XMLMapperBuilder extends BaseBuilder {
   // requiredDatabaseId 通过 configuration.getDatabaseId() != null 断定
   private boolean databaseIdMatchesCurrent(String id, String databaseId, String requiredDatabaseId) {
     if (requiredDatabaseId != null) {
-      if (!requiredDatabaseId.equals(databaseId)) {
-        return false;
-      }
-    } else {
-      // 如果configuration.getDatabaseId() == null，但是sql节点中配置了databaseId（databaseId != null），则不匹配
-      if (databaseId != null) {
-        return false;
-      }
-      // skip this fragment if there is a previous one with a not null databaseId
-      // 如果前一个片段具有非null databaseId，则跳过此片段
-      // （判断是否存在相同的sql片段）
-      if (this.sqlFragments.containsKey(id)) {
-        XNode context = this.sqlFragments.get(id);
-        if (context.getStringAttribute("databaseId") != null) {
-          return false;
-        }
-      }
+      return requiredDatabaseId.equals(databaseId);
     }
-    return true;
+    // 如果configuration.getDatabaseId() == null，但是sql节点中配置了databaseId（databaseId != null），则不匹配
+    if (databaseId != null) {
+      return false;
+    }
+    if (!this.sqlFragments.containsKey(id)) {
+      return true;
+    }
+    // skip this fragment if there is a previous one with a not null databaseId
+    // 如果前一个片段具有非null databaseId，则跳过此片段
+    // （判断是否存在相同的sql片段）
+    XNode context = this.sqlFragments.get(id);
+    return context.getStringAttribute("databaseId") == null;
   }
 
   // 从上下文环境构造RequestMapping

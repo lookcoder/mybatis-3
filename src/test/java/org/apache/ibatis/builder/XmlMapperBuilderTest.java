@@ -15,9 +15,6 @@
  */
 package org.apache.ibatis.builder;
 
-import java.io.InputStream;
-import java.util.regex.Pattern;
-
 import org.apache.ibatis.builder.xml.XMLMapperBuilder;
 import org.apache.ibatis.io.Resources;
 import org.apache.ibatis.mapping.MappedStatement;
@@ -28,10 +25,13 @@ import org.apache.ibatis.type.TypeHandler;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import static com.googlecode.catchexception.apis.BDDCatchException.*;
-import static org.assertj.core.api.BDDAssertions.then;
+import java.io.InputStream;
+import java.util.regex.Pattern;
 
+import static com.googlecode.catchexception.apis.BDDCatchException.caughtException;
+import static com.googlecode.catchexception.apis.BDDCatchException.when;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.BDDAssertions.then;
 
 class XmlMapperBuilderTest {
 
@@ -61,6 +61,20 @@ class XmlMapperBuilderTest {
       assertThat(mappedStatement.isFlushCacheRequired()).isFalse();
       assertThat(mappedStatement.isUseCache()).isFalse();
     }
+  }
+
+  @Test
+  void mappedStatementWithoutOptionsWhenSpecifyDefaultValue() throws Exception {
+    Configuration configuration = new Configuration();
+    configuration.setDefaultResultSetType(ResultSetType.SCROLL_INSENSITIVE);
+    String resource = "org/apache/ibatis/builder/AuthorMapper.xml";
+    InputStream inputStream = Resources.getResourceAsStream(resource);
+    XMLMapperBuilder builder = new XMLMapperBuilder(inputStream, configuration, resource, configuration.getSqlFragments());
+    builder.parse();
+    inputStream.close();
+
+    MappedStatement mappedStatement = configuration.getMappedStatement("selectAuthor");
+    assertThat(mappedStatement.getResultSetType()).isEqualTo(ResultSetType.SCROLL_INSENSITIVE);
   }
 
   @Test
@@ -191,4 +205,21 @@ class XmlMapperBuilderTest {
 //    builder2.parse();
 //  }
 
+   @Test
+   public void erorrResultMapLocation() throws Exception {
+     Configuration configuration = new Configuration();
+     String resource = "org/apache/ibatis/builder/ProblemResultMapper.xml";
+     try (InputStream inputStream = Resources.getResourceAsStream(resource)) {
+       XMLMapperBuilder builder = new XMLMapperBuilder(inputStream, configuration, resource, configuration.getSqlFragments());
+       builder.parse();
+       String resultMapName = "java.lang.String";
+       // namespace + "." + id
+       String statementId = "org.mybatis.spring.ErrorProblemMapper" + "." + "findProblemResultMapTest";
+       // same as MapperBuilderAssistant.getStatementResultMaps Exception message
+       String message = "Could not find result map '" + resultMapName + "' referenced from '" + statementId + "'";
+       IncompleteElementException exception = Assertions.assertThrows(IncompleteElementException.class,
+         ()-> configuration.getMappedStatement("findProblemTypeTest"));
+       assertThat(exception.getMessage()).isEqualTo(message);
+     }
+   }
 }

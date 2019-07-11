@@ -20,23 +20,23 @@ import org.apache.ibatis.cache.decorators.ScheduledCache;
 import org.apache.ibatis.cache.decorators.SerializedCache;
 import org.apache.ibatis.cache.decorators.SynchronizedCache;
 import org.apache.ibatis.cache.impl.PerpetualCache;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashSet;
 import java.util.Set;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class BaseCacheTest {
 
   @Test
   void shouldDemonstrateEqualsAndHashCodeForVariousCacheTypes() {
     PerpetualCache cache = new PerpetualCache("test_cache");
-    assertTrue(cache.equals(cache));
-    assertTrue(cache.equals(new SynchronizedCache(cache)));
-    assertTrue(cache.equals(new SerializedCache(cache)));
-    assertTrue(cache.equals(new LoggingCache(cache)));
-    assertTrue(cache.equals(new ScheduledCache(cache)));
+    assertEquals(cache, cache);
+    assertEquals(cache, new SynchronizedCache(cache));
+    assertEquals(cache, new SerializedCache(cache));
+    assertEquals(cache, new LoggingCache(cache));
+    assertEquals(cache, new ScheduledCache(cache));
 
     assertEquals(cache.hashCode(), new SynchronizedCache(cache).hashCode());
     assertEquals(cache.hashCode(), new SerializedCache(cache).hashCode());

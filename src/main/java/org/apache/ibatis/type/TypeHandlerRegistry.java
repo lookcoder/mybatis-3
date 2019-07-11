@@ -15,6 +15,10 @@
  */
 package org.apache.ibatis.type;
 
+import org.apache.ibatis.binding.MapperMethod.ParamMap;
+import org.apache.ibatis.io.ResolverUtil;
+import org.apache.ibatis.io.Resources;
+
 import java.io.InputStream;
 import java.io.Reader;
 import java.lang.reflect.Constructor;
@@ -22,30 +26,11 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.Month;
-import java.time.OffsetDateTime;
-import java.time.OffsetTime;
-import java.time.Year;
-import java.time.YearMonth;
-import java.time.ZonedDateTime;
+import java.time.*;
 import java.time.chrono.JapaneseDate;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.EnumMap;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-
-import org.apache.ibatis.binding.MapperMethod.ParamMap;
-import org.apache.ibatis.io.ResolverUtil;
-import org.apache.ibatis.io.Resources;
 
 /**
  * @author Clinton Begin
@@ -146,17 +131,17 @@ public final class TypeHandlerRegistry {
 
     register(String.class, JdbcType.SQLXML, new SqlxmlTypeHandler());
 
-    register(Instant.class, InstantTypeHandler.class);
-    register(LocalDateTime.class, LocalDateTimeTypeHandler.class);
-    register(LocalDate.class, LocalDateTypeHandler.class);
-    register(LocalTime.class, LocalTimeTypeHandler.class);
-    register(OffsetDateTime.class, OffsetDateTimeTypeHandler.class);
-    register(OffsetTime.class, OffsetTimeTypeHandler.class);
-    register(ZonedDateTime.class, ZonedDateTimeTypeHandler.class);
-    register(Month.class, MonthTypeHandler.class);
-    register(Year.class, YearTypeHandler.class);
-    register(YearMonth.class, YearMonthTypeHandler.class);
-    register(JapaneseDate.class, JapaneseDateTypeHandler.class);
+    register(Instant.class, new InstantTypeHandler());
+    register(LocalDateTime.class, new LocalDateTimeTypeHandler());
+    register(LocalDate.class, new LocalDateTypeHandler());
+    register(LocalTime.class, new LocalTimeTypeHandler());
+    register(OffsetDateTime.class, new OffsetDateTimeTypeHandler());
+    register(OffsetTime.class, new OffsetTimeTypeHandler());
+    register(ZonedDateTime.class, new ZonedDateTimeTypeHandler());
+    register(Month.class, new MonthTypeHandler());
+    register(Year.class, new YearTypeHandler());
+    register(YearMonth.class, new YearMonthTypeHandler());
+    register(JapaneseDate.class, new JapaneseDateTypeHandler());
 
     // issue #273
     register(Character.class, new CharacterTypeHandler());

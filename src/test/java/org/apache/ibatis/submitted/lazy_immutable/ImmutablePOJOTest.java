@@ -17,14 +17,13 @@ package org.apache.ibatis.submitted.lazy_immutable;
 
 import org.apache.ibatis.BaseDataTest;
 import org.apache.ibatis.io.Resources;
-
-import java.io.Reader;
-
-import org.apache.ibatis.session.SqlSessionFactoryBuilder;
 import org.apache.ibatis.session.SqlSession;
 import org.apache.ibatis.session.SqlSessionFactory;
+import org.apache.ibatis.session.SqlSessionFactoryBuilder;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+
+import java.io.Reader;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -51,7 +50,7 @@ final class ImmutablePOJOTest {
 
             assertEquals(POJO_ID, pojo.getId());
             assertNotNull(pojo.getDescription(), "Description should not be null.");
-            assertFalse(pojo.getDescription().length() == 0, "Description should not be empty.");
+          assertNotEquals(0, pojo.getDescription().length(), "Description should not be empty.");
         }
     }
 

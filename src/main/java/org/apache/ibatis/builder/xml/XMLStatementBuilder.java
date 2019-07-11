@@ -117,6 +117,9 @@ public class XMLStatementBuilder extends BaseBuilder {
     // 结果集类型, DEFAULT, FORWARD_ONLY, SCROLL_INSENSITIVE, SCROLL_SENSITIVE
     String resultSetType = context.getStringAttribute("resultSetType");
     ResultSetType resultSetTypeEnum = resolveResultSetType(resultSetType);
+    if (resultSetTypeEnum == null) {
+      resultSetTypeEnum = configuration.getDefaultResultSetType();
+    }
     //（仅对 insert 和 update 有用）唯一标记一个属性，MyBatis 会通过 getGeneratedKeys 的返回值或者通过 insert 语句的 selectKey 子元素设置它的键值，
     // 默认值：未设置（unset）。如果希望得到多个生成的列，也可以是逗号分隔的属性名称列表。
     String keyProperty = context.getStringAttribute("keyProperty");
@@ -192,27 +195,22 @@ public class XMLStatementBuilder extends BaseBuilder {
 
   private boolean databaseIdMatchesCurrent(String id, String databaseId, String requiredDatabaseId) {
     if (requiredDatabaseId != null) {
-      if (!requiredDatabaseId.equals(databaseId)) {
-        return false;
-      }
-    } else {
-      // 如果全局没有配置数据库厂商标识
-      // 则如果statement片段配置标识则跳过
-      if (databaseId != null) {
-        return false;
-      }
-      // skip this statement if there is a previous one with a not null databaseId
-      // 如果前一个片段具有非null databaseId，则跳过此片段
-      // （判断是否存在相同的sql片段）
-      id = builderAssistant.applyCurrentNamespace(id, false);
-      if (this.configuration.hasStatement(id, false)) {
-        MappedStatement previous = this.configuration.getMappedStatement(id, false); // issue #2
-        if (previous.getDatabaseId() != null) {
-          return false;
-        }
-      }
+      return requiredDatabaseId.equals(databaseId);
     }
-    return true;
+    // 如果全局没有配置数据库厂商标识
+    // 则如果statement片段配置标识则跳过
+    if (databaseId != null) {
+      return false;
+    }
+    id = builderAssistant.applyCurrentNamespace(id, false);
+    if (!this.configuration.hasStatement(id, false)) {
+      return true;
+    }
+    // skip this statement if there is a previous one with a not null databaseId
+    // 如果前一个片段具有非null databaseId，则跳过此片段
+    // （判断是否存在相同的sql片段）
+    MappedStatement previous = this.configuration.getMappedStatement(id, false); // issue #2
+    return previous.getDatabaseId() == null;
   }
 
   private LanguageDriver getLanguageDriver(String lang) {
