@@ -261,6 +261,7 @@ public class XMLConfigBuilder extends BaseBuilder {
     configuration.setCallSettersOnNulls(booleanValueOf(props.getProperty("callSettersOnNulls"), false));
     configuration.setUseActualParamName(booleanValueOf(props.getProperty("useActualParamName"), true));
     configuration.setReturnInstanceForEmptyRow(booleanValueOf(props.getProperty("returnInstanceForEmptyRow"), false));
+    configuration.setUserShortKey(booleanValueOf(props.getProperty("userShortKey"), true));
     configuration.setLogPrefix(props.getProperty("logPrefix"));
     configuration.setConfigurationFactory(resolveClass(props.getProperty("configurationFactory")));
   }

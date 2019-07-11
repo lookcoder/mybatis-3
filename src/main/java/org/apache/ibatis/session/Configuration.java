@@ -94,6 +94,7 @@ public class Configuration {
   protected boolean callSettersOnNulls;
   protected boolean useActualParamName = true;
   protected boolean returnInstanceForEmptyRow;
+  protected boolean userShortKey= true;
 
   protected String logPrefix;
   protected Class<? extends Log> logImpl;
@@ -131,16 +132,16 @@ public class Configuration {
   protected final TypeAliasRegistry typeAliasRegistry = new TypeAliasRegistry();
   protected final LanguageDriverRegistry languageRegistry = new LanguageDriverRegistry();
 
-  protected final Map<String, MappedStatement> mappedStatements = new StrictMap<MappedStatement>("Mapped Statements collection")
+  protected final Map<String, MappedStatement> mappedStatements = new StrictMap<MappedStatement>(this, "Mapped Statements collection")
       .conflictMessageProducer((savedValue, targetValue) ->
           ". please check " + savedValue.getResource() + " and " + targetValue.getResource());
-  protected final Map<String, Cache> caches = new StrictMap<>("Caches collection");
-  protected final Map<String, ResultMap> resultMaps = new StrictMap<>("Result Maps collection");
-  protected final Map<String, ParameterMap> parameterMaps = new StrictMap<>("Parameter Maps collection");
-  protected final Map<String, KeyGenerator> keyGenerators = new StrictMap<>("Key Generators collection");
+  protected final Map<String, Cache> caches = new StrictMap<>(this, "Caches collection");
+  protected final Map<String, ResultMap> resultMaps = new StrictMap<>(this, "Result Maps collection");
+  protected final Map<String, ParameterMap> parameterMaps = new StrictMap<>(this, "Parameter Maps collection");
+  protected final Map<String, KeyGenerator> keyGenerators = new StrictMap<>(this, "Key Generators collection");
 
   protected final Set<String> loadedResources = new HashSet<>();
-  protected final Map<String, XNode> sqlFragments = new StrictMap<>("XML fragments parsed from previous mappers");
+  protected final Map<String, XNode> sqlFragments = new StrictMap<>(this, "XML fragments parsed from previous mappers");
 
   protected final Collection<XMLStatementBuilder> incompleteStatements = new LinkedList<>();
   protected final Collection<CacheRefResolver> incompleteCacheRefs = new LinkedList<>();
@@ -245,6 +246,14 @@ public class Configuration {
 
   public void setReturnInstanceForEmptyRow(boolean returnEmptyInstance) {
     this.returnInstanceForEmptyRow = returnEmptyInstance;
+  }
+
+  public boolean isUserShortKey() {
+    return userShortKey;
+  }
+
+  public void setUserShortKey(boolean userShortKey) {
+    this.userShortKey = userShortKey;
   }
 
   public String getDatabaseId() {
@@ -886,6 +895,7 @@ public class Configuration {
     private static final long serialVersionUID = -4950446264854982944L;
     private final String name;
     private BiFunction<V, V, String> conflictMessageProducer;
+    private Configuration configuration;
 
     public StrictMap(String name, int initialCapacity, float loadFactor) {
       super(initialCapacity, loadFactor);
@@ -905,6 +915,26 @@ public class Configuration {
     public StrictMap(String name, Map<String, ? extends V> m) {
       super(m);
       this.name = name;
+    }
+
+    public StrictMap(Configuration configuration, String name, int initialCapacity, float loadFactor) {
+      this(name, initialCapacity, loadFactor);
+      this.configuration = configuration;
+    }
+
+    public StrictMap(Configuration configuration, String name, int initialCapacity) {
+      this(name, initialCapacity);
+      this.configuration = configuration;
+    }
+
+    public StrictMap(Configuration configuration, String name) {
+      this(name);
+      this.configuration = configuration;
+    }
+
+    public StrictMap(Configuration configuration, String name, Map<String, ? extends V> m) {
+      this(name, m);
+      this.configuration = configuration;
     }
 
     /**
@@ -927,12 +957,14 @@ public class Configuration {
         throw new IllegalArgumentException(name + " already contains value for " + key
             + (conflictMessageProducer == null ? "" : conflictMessageProducer.apply(super.get(key), value)));
       }
-      if (key.contains(".")) {
-        final String shortKey = getShortName(key);
-        if (super.get(shortKey) == null) {
-          super.put(shortKey, value);
-        } else {
-          super.put(shortKey, (V) new Ambiguity(shortKey));
+      if (configuration == null || configuration.isUserShortKey()) {
+        if (key.contains(".")) {
+          final String shortKey = getShortName(key);
+          if (super.get(shortKey) == null) {
+            super.put(shortKey, value);
+          } else {
+            super.put(shortKey, (V) new Ambiguity(shortKey));
+          }
         }
       }
       return super.put(key, value);
